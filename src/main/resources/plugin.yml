@@ -1,0 +1,6 @@
+name: Customchatemoji
+version: ${project.version}
+main: com.strangeone101.customchatemoji.Customchatemoji
+api-version: 1.13
+authors: [StrangeOne101]
+description: Allows custom emoji to be added to the game

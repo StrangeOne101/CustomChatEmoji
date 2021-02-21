@@ -1,0 +1,16 @@
+# The range of characters to use. It's recommended to use the default ones
+# and simply change the aliases for each one in game and in your respective
+# texture packs.
+#
+# All characters are in hexadecimal and must be in the format of MIN:MAX
+# Look on the spigot page for information on how to find the texture file
+# and location of each character if you need help with making your texture
+# packs
+CharacterRanges:
+  - "e000:f8ff"
+
+Groups:
+  Admin:
+    Range:
+    - "a950:a955"
+    Permission: "my.custom.admin.permission"
