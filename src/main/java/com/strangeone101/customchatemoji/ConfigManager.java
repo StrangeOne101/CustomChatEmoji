@@ -67,5 +67,7 @@ public class ConfigManager {
         }
 
         CharacterLoader.getINSTANCE().setCharacterRange(set);
+
+        //TODO: Scrap character ranges and load the groups via the config
     }
 }

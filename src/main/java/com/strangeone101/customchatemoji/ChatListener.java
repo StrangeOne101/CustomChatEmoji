@@ -17,6 +17,10 @@ public class ChatListener implements Listener {
 
     private static Map<Player, Set<OnChatRunnable>> chatRunnables = new HashMap<>();
 
+    /**
+     * This class is a class that lets us run code after they next say something in chat.
+     * Usage is `new OnChatRunnable(player) { ... }.listen();`
+     */
     public abstract static class OnChatRunnable implements Runnable {
 
         private String chatMessage;
@@ -44,7 +48,7 @@ public class ChatListener implements Listener {
             return chatMessage;
         }
 
-        public void setChatMessage(String chatMessage) {
+        private void setChatMessage(String chatMessage) {
             this.chatMessage = chatMessage;
         }
 
@@ -52,7 +56,7 @@ public class ChatListener implements Listener {
             return format;
         }
 
-        public void setFormat(String format) {
+        private void setFormat(String format) {
             this.format = format;
         }
 
@@ -71,6 +75,8 @@ public class ChatListener implements Listener {
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent event) {
+        //If there is a chat runnable for this player, try parse what they say
+        //in it and possibly cancel the event
         if (chatRunnables.containsKey(event.getPlayer())) {
             List<OnChatRunnable> done = new ArrayList<>();
             for (OnChatRunnable runnable : chatRunnables.get(event.getPlayer())) {
@@ -88,9 +94,12 @@ public class ChatListener implements Listener {
                 chatRunnables.remove(event.getPlayer());
             }
         }
+
         if (!event.isCancelled() && event.getPlayer().hasPermission("customchatemoji.use")) {
+            //Record a hash so we can check later if it has been changed
             int hash = event.getMessage().hashCode();
             String msg = event.getMessage();
+            //TODO: Change this to do it via groups they have perm for instead of every single alias
             for (String alias : CharacterLoader.getINSTANCE().getAliases().keySet()) {
                 CharacterData data = CharacterLoader.getINSTANCE().getAliases().get(alias);
                 String replacement = data.isCanColor() ? data.getCharacter().toString() : ChatColor.WHITE + data.getCharacter().toString() + ChatColor.RESET;

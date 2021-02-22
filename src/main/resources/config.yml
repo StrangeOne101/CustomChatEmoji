@@ -1,16 +1,16 @@
-# The range of characters to use. It's recommended to use the default ones
-# and simply change the aliases for each one in game and in your respective
-# texture packs.
-#
-# All characters are in hexadecimal and must be in the format of MIN:MAX
-# Look on the spigot page for information on how to find the texture file
-# and location of each character if you need help with making your texture
-# packs
-CharacterRanges:
-  - "e000:f8ff"
+# The character that should surround emoji names. E.g. the emoji :smile: uses the character :
+EmojiCharacter: ":"
 
+# Each group has its own permission node and range of characters it can use.
+# The range of characters are in hexadecimal and must be in the format of MIN:MAX
 Groups:
+  Default:
+    Range:
+      - "e000:e02a"
+    Permission: "customchatemoji.group.default"
+    Emoji:
+      e000: "matsuri_pog"
   Admin:
     Range:
-    - "a950:a955"
-    Permission: "my.custom.admin.permission"
+    - "e0e0:e0ff"
+    Permission: "customchatemoji.group.admin"
