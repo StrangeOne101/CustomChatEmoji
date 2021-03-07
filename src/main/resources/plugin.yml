@@ -1,6 +1,12 @@
 name: Customchatemoji
 version: ${project.version}
 main: com.strangeone101.customchatemoji.Customchatemoji
-api-version: 1.13
-authors: [StrangeOne101]
+api-version: 1.16
+authors: [StrangeOne101, mms0316]
 description: Allows custom emoji to be added to the game
+commands:
+  cce:
+    description: Lists/edits custom chat emojis
+    usage: /cce [list|edit|reload]
+    permission: customchatemoji.config
+    permission-message: You are not allowed to do that.

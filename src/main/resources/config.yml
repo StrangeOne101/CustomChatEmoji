@@ -1,16 +1,16 @@
 # The character that should surround emoji names. E.g. the emoji :smile: uses the character :
-EmojiCharacter: ":"
+EmojiTag: ":"
+
+Emoji:
+  "\ue000": matsuri_pog
+  "\ue001": ayame_despair
+  "\ue002": omegapol
+  "\ue003": ina_humu
 
 # Each group has its own permission node and range of characters it can use.
-# The range of characters are in hexadecimal and must be in the format of MIN:MAX
-Groups:
-  Default:
-    Range:
-      - "e000:e02a"
-    Permission: "customchatemoji.group.default"
-    Emoji:
-      e000: "matsuri_pog"
-  Admin:
-    Range:
-    - "e0e0:e0ff"
-    Permission: "customchatemoji.group.admin"
+# The range of characters are in unicode and must be in the format of MIN:MAX
+Permission:
+  "customchatemoji.group.default":
+    - "\ue000:\ue002"
+  "customchatemoji.group.admin":
+    - "\ue003"

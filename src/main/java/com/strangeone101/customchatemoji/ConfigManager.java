@@ -1,73 +1,115 @@
 package com.strangeone101.customchatemoji;
 
-import javafx.util.Pair;
-import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ConfigManager {
+    private static char emojiTag;
+    private static HashMap<Character, EmojiEntry> emojiEntries;
 
-    private static FileConfiguration config;
+    private static final boolean LOG_DEBUG = true;
 
     public static boolean setup() {
-        File file = new File(Customchatemoji.getInstance().getDataFolder(), "config.yml");
-        if (!file.exists()) {
-            if (!Util.saveResource("config.yml", file)) {
-                Customchatemoji.getInstance().getLogger().severe("Failed to copy default config!");
-                return false;
+        Customchatemoji.getInstance().saveDefaultConfig();
+        FileConfiguration config = Customchatemoji.getInstance().getConfig();
+
+        String emojiTagString = config.getString("EmojiTag");
+        if (LOG_DEBUG) Bukkit.getLogger().info("EmojiTag = [" + (emojiTagString != null ? emojiTagString : "null") + "]");
+        if (emojiTagString != null) {
+            emojiTag = emojiTagString.charAt(0);
+            Bukkit.getLogger().info("emojiTag = [" + emojiTag + "]");
+        }
+
+        emojiEntries = new HashMap<>();
+
+        ConfigurationSection emojiSection = config.getConfigurationSection("Emoji");
+        if (LOG_DEBUG) Bukkit.getLogger().info("Emoji = [" + (emojiSection != null ? emojiSection.getName() : "null") + "]");
+        if (emojiSection == null) return false;
+
+        Map<String, Object> emojiMappings = emojiSection.getValues(false);
+        for (Map.Entry<String, Object> emojiMapping : emojiMappings.entrySet()) {
+            char emojiUnicode = emojiMapping.getKey().charAt(0);
+            String emojiName = emojiMapping.getValue().toString();
+            Bukkit.getLogger().info(Integer.toHexString(emojiUnicode) + " = [" + emojiName + "]");
+
+            emojiEntries.put(emojiUnicode, new EmojiEntry(emojiName));
+        }
+
+        ConfigurationSection permissionSection = config.getConfigurationSection("Permission");
+        if (LOG_DEBUG) Bukkit.getLogger().info("Permission = [" + (permissionSection != null ? permissionSection.getName() : "null") + "]");
+        if (permissionSection == null) return false;
+
+        for (String permission : permissionSection.getKeys(true)) {
+            if (LOG_DEBUG) Bukkit.getLogger().info("permission = [" + permission + "]");
+            if (!permissionSection.isList(permission)) continue;
+            for (String range : permissionSection.getStringList(permission)) {
+                if (LOG_DEBUG) Bukkit.getLogger().info(permission + " = [" + range + "]");
+                String[] parts = range.split(":");
+
+                if (parts.length == 2) {
+                    char minRange, maxRange;
+                    if (parts[0].length() != 1 || parts[1].length() != 1) {
+                        Bukkit.getLogger().warning("Invalid unicode range: " + range);
+                        continue;
+                    }
+
+                    minRange = parts[0].charAt(0);
+                    maxRange = parts[1].charAt(0);
+                    if (minRange >= maxRange) {
+                        Bukkit.getLogger().warning("Invalid unicode range limit: " + range);
+                        continue;
+                    }
+
+                    for (char unicode = minRange; unicode <= maxRange; unicode++) {
+                        EmojiEntry entry = emojiEntries.get(unicode);
+                        if (entry != null) {
+                            Bukkit.getLogger().info(Integer.toHexString(unicode) + " added for " + permission);
+                            entry.getPermissions().add(permission);
+                        }
+                    }
+                } else if (parts.length == 1) {
+                    if (parts[0].length() != 1) {
+                        Bukkit.getLogger().warning("Invalid unicode: " + range);
+                        continue;
+                    }
+
+                    char unicode = parts[0].charAt(0);
+                    EmojiEntry entry = emojiEntries.get(unicode);
+                    if (entry != null) {
+                        Bukkit.getLogger().info(Integer.toHexString(unicode) + " added for " + permission);
+                        entry.getPermissions().add(permission);
+                    }
+                } else {
+                    Bukkit.getLogger().warning("Invalid range format: " + range);
+                }
             }
         }
-
-        config = new YamlConfiguration();
-        try {
-            config.load(file);
-
-            loadConfig();
-
-            return true;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidConfigurationException e) {
-            e.printStackTrace();
-        }
-
-        return false;
-
+        return true;
     }
 
-    public static void loadConfig() {
-        List<String> l = config.getStringList("CharacterRanges");
-        Set<Pair<Character, Character>> set = new HashSet<>();
-
-        for (String s : l) {
-            if (s.split(":").length == 1) {
-                Customchatemoji.getInstance().getLogger().warning("Character range \"" + s + "\" in config did not include a colon character split!");
-                continue;
-            }
-            String[] parts = s.split(":");
-            String part1 = parts[0].replace("\\u", "").replace("0x", "");
-            String part2 = parts[0].replace("\\u", "").replace("0x", "");
-            try {
-                int char1 = Integer.parseInt(part1, 16);
-                int char2 = Integer.parseInt(part2, 16);
-
-                Pair<Character, Character> pair = new Pair<Character, Character>(Character.forDigit(char1, 10), Character.forDigit(char2, 10));
-                set.add(pair);
-            } catch (NumberFormatException e) {
-                Customchatemoji.getInstance().getLogger().warning("Character range \"" + s + "\" cannot be parsed! Are you sure they are in hexadecimal in the right format?");
-                continue;
-            }
+    public static class EmojiEntry {
+        public EmojiEntry(String name, List<String> permissions) {
+            this.name = name;
+            this.permissions = permissions;
         }
+        public EmojiEntry(String name) {
+            this(name, new ArrayList<>());
+        }
+        public String getName() { return this.name; }
+        public List<String> getPermissions() { return this.permissions; }
 
-        CharacterLoader.getINSTANCE().setCharacterRange(set);
+        private final String name;
+        private final List<String> permissions;
+    }
 
-        //TODO: Scrap character ranges and load the groups via the config
+    public static char getEmojiTag() {
+        return emojiTag;
+    }
+
+    public static HashMap<Character, EmojiEntry> getEmojiEntries() {
+        return emojiEntries;
     }
 }

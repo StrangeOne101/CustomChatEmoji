@@ -13,8 +13,6 @@ public final class Customchatemoji extends JavaPlugin {
         // Plugin startup logic
         INSTANCE = this;
 
-        new CharacterLoader();
-
         ConfigManager.setup();
 
         CCECommand cmd = new CCECommand();
@@ -22,14 +20,8 @@ public final class Customchatemoji extends JavaPlugin {
         getCommand("cce").setExecutor(cmd);
 
         Bukkit.getPluginManager().registerEvents(new ChatListener(), this);
-
+        getLogger().info("Plugin enabled!");
     }
-
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
-    }
-
     public static Customchatemoji getInstance() {
         return INSTANCE;
     }
