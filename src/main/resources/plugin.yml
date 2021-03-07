@@ -8,5 +8,5 @@ commands:
   cce:
     description: Lists/edits custom chat emojis
     usage: /cce [list|edit|reload]
-    permission: customchatemoji.config
+    permission: customchatemoji.cmd
     permission-message: You are not allowed to do that.
