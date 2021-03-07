@@ -3,6 +3,7 @@ package com.strangeone101.customchatemoji;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 
 import java.util.*;
 
@@ -111,5 +112,17 @@ public class ConfigManager {
 
     public static HashMap<Character, EmojiEntry> getEmojiEntries() {
         return emojiEntries;
+    }
+
+    public static boolean emojiAllowed (Player player, char emoji) {
+        EmojiEntry emojiEntry = ConfigManager.getEmojiEntries().get(emoji);
+        if (emojiEntry == null) return true;
+
+        for (String permission : emojiEntry.getPermissions()) {
+            if (player.hasPermission(permission)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
