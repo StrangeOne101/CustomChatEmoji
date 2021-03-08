@@ -7,6 +7,6 @@ description: Allows custom emoji to be added to the game
 commands:
   cce:
     description: Lists/edits custom chat emojis
-    usage: /cce [list|edit|reload]
+    usage: Use /cce help
     permission: customchatemoji.cmd
     permission-message: You are not allowed to do that.

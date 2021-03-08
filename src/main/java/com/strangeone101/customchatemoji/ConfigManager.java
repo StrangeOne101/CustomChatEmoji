@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 public class ConfigManager {
+    private static FileConfiguration config;
     private static char emojiTag;
     private static HashMap<Character, EmojiEntry> emojiEntries;
 
@@ -15,7 +16,7 @@ public class ConfigManager {
 
     public static boolean setup() {
         Customchatemoji.getInstance().saveDefaultConfig();
-        FileConfiguration config = Customchatemoji.getInstance().getConfig();
+        config = Customchatemoji.getInstance().getConfig();
 
         String emojiTagString = config.getString("EmojiTag");
         if (LOG_DEBUG) Bukkit.getLogger().info("EmojiTag = [" + (emojiTagString != null ? emojiTagString : "null") + "]");
@@ -46,45 +47,19 @@ public class ConfigManager {
         for (String permission : permissionSection.getKeys(true)) {
             if (LOG_DEBUG) Bukkit.getLogger().info("permission = [" + permission + "]");
             if (!permissionSection.isList(permission)) continue;
-            for (String range : permissionSection.getStringList(permission)) {
-                if (LOG_DEBUG) Bukkit.getLogger().info(permission + " = [" + range + "]");
-                String[] parts = range.split(":");
+            for (String emoji : permissionSection.getStringList(permission)) {
+                if (LOG_DEBUG) Bukkit.getLogger().info(permission + " = [" + emoji + "]");
 
-                if (parts.length == 2) {
-                    char minRange, maxRange;
-                    if (parts[0].length() != 1 || parts[1].length() != 1) {
-                        Bukkit.getLogger().warning("Invalid unicode range: " + range);
-                        continue;
-                    }
+                if (emoji.length() != 1) {
+                    Bukkit.getLogger().warning("Invalid unicode: " + emoji);
+                    continue;
+                }
 
-                    minRange = parts[0].charAt(0);
-                    maxRange = parts[1].charAt(0);
-                    if (minRange >= maxRange) {
-                        Bukkit.getLogger().warning("Invalid unicode range limit: " + range);
-                        continue;
-                    }
-
-                    for (char unicode = minRange; unicode <= maxRange; unicode++) {
-                        EmojiEntry entry = emojiEntries.get(unicode);
-                        if (entry != null) {
-                            Bukkit.getLogger().info(Integer.toHexString(unicode) + " added for " + permission);
-                            entry.getPermissions().add(permission);
-                        }
-                    }
-                } else if (parts.length == 1) {
-                    if (parts[0].length() != 1) {
-                        Bukkit.getLogger().warning("Invalid unicode: " + range);
-                        continue;
-                    }
-
-                    char unicode = parts[0].charAt(0);
-                    EmojiEntry entry = emojiEntries.get(unicode);
-                    if (entry != null) {
-                        Bukkit.getLogger().info(Integer.toHexString(unicode) + " added for " + permission);
-                        entry.getPermissions().add(permission);
-                    }
-                } else {
-                    Bukkit.getLogger().warning("Invalid range format: " + range);
+                char unicode = emoji.charAt(0);
+                EmojiEntry entry = emojiEntries.get(unicode);
+                if (entry != null) {
+                    Bukkit.getLogger().info(Integer.toHexString(unicode) + " added for " + permission);
+                    entry.getPermissions().add(permission);
                 }
             }
         }
@@ -92,18 +67,18 @@ public class ConfigManager {
     }
 
     public static class EmojiEntry {
-        public EmojiEntry(String name, List<String> permissions) {
+        public EmojiEntry(String name, Set<String> permissions) {
             this.name = name;
             this.permissions = permissions;
         }
         public EmojiEntry(String name) {
-            this(name, new ArrayList<>());
+            this(name, new HashSet<>());
         }
         public String getName() { return this.name; }
-        public List<String> getPermissions() { return this.permissions; }
+        public Set<String> getPermissions() { return this.permissions; }
 
         private final String name;
-        private final List<String> permissions;
+        private final Set<String> permissions;
     }
 
     public static char getEmojiTag() {
@@ -114,15 +89,41 @@ public class ConfigManager {
         return emojiEntries;
     }
 
-    public static boolean emojiAllowed (Player player, char emoji) {
-        EmojiEntry emojiEntry = ConfigManager.getEmojiEntries().get(emoji);
-        if (emojiEntry == null) return true;
+    public static void addPermission(char emoji, String permission) {
+        //Memory
+        ConfigManager.getEmojiEntries().get(emoji).getPermissions().add(permission);
 
-        for (String permission : emojiEntry.getPermissions()) {
-            if (player.hasPermission(permission)) {
-                return true;
-            }
+        //File
+        String key = "Permission." + permission;
+
+        List<String> emojis = config.getStringList(key);
+        if (!emojis.contains(emoji)) {
+            emojis.add(String.valueOf(emoji));
+            config.set(key, emojis);
+            Customchatemoji.getInstance().saveConfig();
         }
-        return false;
+    }
+
+    public static boolean delPermission(char emoji, String permission) {
+        boolean success;
+        //Memory
+        success = ConfigManager.getEmojiEntries().get(emoji).getPermissions().remove(permission);
+
+        //File
+        if (success) {
+            String key = "Permission." + permission;
+
+            List<String> emojis = config.getStringList(key);
+
+            emojis.remove(String.valueOf(emoji));
+            if (emojis.isEmpty()) {
+                config.set(key, null);
+            } else {
+                config.set(key, emojis);
+            }
+            Customchatemoji.getInstance().saveConfig();
+        }
+
+        return success;
     }
 }

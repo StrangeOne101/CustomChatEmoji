@@ -18,6 +18,7 @@ public final class Customchatemoji extends JavaPlugin {
         CCECommand cmd = new CCECommand();
 
         getCommand("cce").setExecutor(cmd);
+        getCommand("cce").setTabCompleter(cmd);
 
         Bukkit.getPluginManager().registerEvents(new ChatListener(), this);
         getLogger().info("Plugin enabled!");

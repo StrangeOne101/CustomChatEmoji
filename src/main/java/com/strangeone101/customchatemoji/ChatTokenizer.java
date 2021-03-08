@@ -76,7 +76,7 @@ public class ChatTokenizer {
                         Character emoji = emojiEntry.getKey();
                         String emojiName = emojiEntry.getValue().getName();
 
-                        if (ConfigManager.emojiAllowed(player, emoji) && emojiName.regionMatches(0, message, emojiTagBegin + 1, emojiName.length())) {
+                        if (EmojiUtil.isPermitted(emoji, player) && emojiName.regionMatches(0, message, emojiTagBegin + 1, emojiName.length())) {
                             isEmoji = true;
                             //End token as emoji
                             if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Pushing 0x" + Integer.toHexString(emoji) + " (from " + emojiName + ")");
