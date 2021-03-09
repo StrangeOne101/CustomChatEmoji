@@ -6,7 +6,6 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ChatTokenizer {
     private static final boolean LOG_DEBUG = true;
@@ -16,6 +15,7 @@ public class ChatTokenizer {
         boolean hasEmoji = false;
 
         HashMap<Character, ConfigManager.EmojiEntry> emojiEntries = ConfigManager.getEmojiEntries();
+        HashMap<String, Character> emojiNames = ConfigManager.getEmojiNames();
         char emojiTag = ConfigManager.getEmojiTag();
 
         int stringBegin = -1;
@@ -70,24 +70,17 @@ public class ChatTokenizer {
                     emojiTagBegin = -1;
                 } else if (c == emojiTag) {
                     //Closing emoji tag found
-                    boolean isEmoji = false;
-                    for (Map.Entry<Character, ConfigManager.EmojiEntry> emojiEntry : ConfigManager.getEmojiEntries().entrySet()) {
-                        if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode] Checking [" + message.substring(emojiTagBegin + 1, index) + "] x [" + emojiEntry.getValue().getName() + "]");
-                        Character emoji = emojiEntry.getKey();
-                        String emojiName = emojiEntry.getValue().getName();
-
-                        if (EmojiUtil.isPermitted(emoji, player) && emojiName.regionMatches(0, message, emojiTagBegin + 1, emojiName.length())) {
-                            isEmoji = true;
-                            //End token as emoji
-                            if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Pushing 0x" + Integer.toHexString(emoji) + " (from " + emojiName + ")");
-                            chatTokens.add(new ChatToken(emojiTagBegin, index + 1, emoji));
-                            hasEmoji = true;
-                            emojiTagBegin = -1;
-                            if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode] => [String mode]");
-                            break;
-                        }
-                    }
-                    if (!isEmoji) {
+                    String emojiName = message.substring(emojiTagBegin + 1, index);
+                    if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode] Checking [" + emojiName + "]");
+                    Character emoji = emojiNames.get(emojiName);
+                    if (emoji != null && EmojiUtil.isPermitted(emoji, player)) {
+                        //End token as emoji
+                        if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Pushing 0x" + Integer.toHexString(emoji) + " (from " + emojiName + ")");
+                        chatTokens.add(new ChatToken(emojiTagBegin, index + 1, emoji));
+                        hasEmoji = true;
+                        emojiTagBegin = -1;
+                        if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode] => [String mode]");
+                    } else {
                         //End token as string (not emoji)
                         if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Not an emoji. Pushing [" + message.substring(emojiTagBegin, index) + "]");
                         chatTokens.add(new ChatToken(emojiTagBegin, index));

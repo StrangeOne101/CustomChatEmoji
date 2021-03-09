@@ -5,6 +5,7 @@ import org.bukkit.permissions.Permissible;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class EmojiUtil {
     public static boolean isPermitted (char emoji, Permissible permissible) {
@@ -28,22 +29,13 @@ public class EmojiUtil {
 
     public static char fromEmojiName (String emojiName) {
         if (emojiName == null) return '\0';
-        for (Map.Entry<Character, ConfigManager.EmojiEntry> entries : ConfigManager.getEmojiEntries().entrySet()) {
-            if (entries.getValue().getName().equals(emojiName)) {
-                return entries.getKey();
-            }
-        }
-        return '\0';
+        Character emoji = ConfigManager.getEmojiNames().get(emojiName);
+        if (emoji == null) return '\0';
+        return emoji;
     }
 
-    public static List<String> allEmojiNames () {
-        List<String> emojiNames = new ArrayList<>();
-
-        for (ConfigManager.EmojiEntry entries : ConfigManager.getEmojiEntries().values()) {
-            emojiNames.add(entries.getName());
-        }
-
-        return emojiNames;
+    public static Set<String> allEmojiNames () {
+        return ConfigManager.getEmojiNames().keySet();
     }
 
     public static List<String> allPermissions () {

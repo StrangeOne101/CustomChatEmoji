@@ -3,13 +3,13 @@ package com.strangeone101.customchatemoji;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Player;
 
 import java.util.*;
 
 public class ConfigManager {
     private static FileConfiguration config;
     private static char emojiTag;
+    private static HashMap<String, Character> emojiNames;
     private static HashMap<Character, EmojiEntry> emojiEntries;
 
     private static final boolean LOG_DEBUG = true;
@@ -25,6 +25,7 @@ public class ConfigManager {
             Bukkit.getLogger().info("emojiTag = [" + emojiTag + "]");
         }
 
+        emojiNames = new HashMap<>();
         emojiEntries = new HashMap<>();
 
         ConfigurationSection emojiSection = config.getConfigurationSection("Emoji");
@@ -37,6 +38,7 @@ public class ConfigManager {
             String emojiName = emojiMapping.getValue().toString();
             Bukkit.getLogger().info(Integer.toHexString(emojiUnicode) + " = [" + emojiName + "]");
 
+            emojiNames.put(emojiName, emojiUnicode);
             emojiEntries.put(emojiUnicode, new EmojiEntry(emojiName));
         }
 
@@ -85,6 +87,9 @@ public class ConfigManager {
         return emojiTag;
     }
 
+    public static HashMap<String, Character> getEmojiNames() {
+        return emojiNames;
+    }
     public static HashMap<Character, EmojiEntry> getEmojiEntries() {
         return emojiEntries;
     }
