@@ -13,23 +13,16 @@ public final class Customchatemoji extends JavaPlugin {
         // Plugin startup logic
         INSTANCE = this;
 
-        new CharacterLoader();
-
         ConfigManager.setup();
 
         CCECommand cmd = new CCECommand();
 
         getCommand("cce").setExecutor(cmd);
+        getCommand("cce").setTabCompleter(cmd);
 
         Bukkit.getPluginManager().registerEvents(new ChatListener(), this);
-
+        getLogger().info("Plugin enabled!");
     }
-
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
-    }
-
     public static Customchatemoji getInstance() {
         return INSTANCE;
     }

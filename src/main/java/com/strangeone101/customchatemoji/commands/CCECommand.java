@@ -1,34 +1,280 @@
 package com.strangeone101.customchatemoji.commands;
 
-import org.bukkit.ChatColor;
+import com.strangeone101.customchatemoji.ConfigManager;
+import com.strangeone101.customchatemoji.Customchatemoji;
+import com.strangeone101.customchatemoji.EmojiUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
-import java.util.Arrays;
+import java.util.*;
 
-public class CCECommand implements CommandExecutor {
-
+public class CCECommand implements CommandExecutor, TabCompleter {
     public CCECommand() {
-        new EditCommand();
+        this.rootCommands = new ArrayList<>();
+        this.rootCommands.add(new CommandPermission("show"));
+        this.rootCommands.add(new CommandPermission("list"));
+        this.rootCommands.add(new CommandPermission("perm", "customchatemoji.config"));
+        this.rootCommands.add(new CommandPermission("reload", "customchatemoji.config"));
+
+        this.permCommands = new ArrayList<>();
+        this.permCommands.add("list");
+        this.permCommands.add("add");
+        this.permCommands.add("del");
+    }
+
+    private static class CommandPermission {
+        public CommandPermission(String command, String permission) {
+            this.command = command;
+            this.permission = permission;
+        }
+        public CommandPermission(String command) {
+            this(command, null);
+        }
+        public String command;
+        public String permission;
+    }
+
+    private final List<CommandPermission> rootCommands;
+    private final List<String> permCommands;
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+
+        List<String> results = new ArrayList<>();
+        if (args.length == 1) {
+            for (CommandPermission param : this.rootCommands) {
+                if (param.command.toLowerCase().startsWith(args[0].toLowerCase())) {
+                    if (param.permission == null || sender.hasPermission(param.permission)) {
+                        results.add(param.command);
+                    }
+                }
+            }
+        } else if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("show")) {
+                for (String param : EmojiUtil.allPermittedEmojiNames(sender)) {
+                    if (param.toLowerCase().startsWith(args[1].toLowerCase())) {
+                        results.add(param);
+                    }
+                }
+            } else if (args[0].equalsIgnoreCase("list")) {
+                if (sender.hasPermission("customchatemoji.config")) {
+                    return null; //Player name
+                }
+            } else if (args[0].equalsIgnoreCase("perm") &&
+                    sender.hasPermission("customchatemoji.config")) {
+                for (String param : this.permCommands) {
+                    if (param.toLowerCase().startsWith(args[1].toLowerCase())) {
+                        results.add(param);
+                    }
+                }
+            }
+        } else if (args.length == 3) {
+            if (args[0].equalsIgnoreCase("perm") &&
+                    sender.hasPermission("customchatemoji.config") &&
+                    (args[1].equalsIgnoreCase("add") || args[1].equalsIgnoreCase("del"))) {
+                for (String param : EmojiUtil.allEmojiNames()) {
+                    if (param.toLowerCase().startsWith(args[2].toLowerCase())) {
+                        results.add(param);
+                    }
+                }
+            }
+        } else if (args.length == 4) {
+            if (args[0].equalsIgnoreCase("perm") &&
+                    sender.hasPermission("customchatemoji.config") &&
+                    (args[1].equalsIgnoreCase("add") || args[1].equalsIgnoreCase("del"))) {
+                for (String param : EmojiUtil.allPermissions()) {
+                    if (param.toLowerCase().startsWith(args[3].toLowerCase())) {
+                        results.add(param);
+                    }
+                }
+            }
+        }
+        return results;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        String show = "/cce show <emoji>";
+        String permList = "/cce perm list";
+        String permAdd = "/cce perm add <emoji> <permission>";
+        String permDel = "/cce perm del <emoji> <permission>";
 
-        if (args.length == 0 || !BaseCommand.commands.containsKey(args[0].toLowerCase())) {
-            sendHelp(sender);
-            return true;
+        if (args.length > 0) {
+            if (args[0].equalsIgnoreCase("help")) {
+                if (sender.hasPermission("customchatemoji.config")) {
+                    sender.sendMessage("/cce reload");
+                    sender.sendMessage(show);
+                    sender.sendMessage("/cce list [player]");
+                    sender.sendMessage(permList);
+                    sender.sendMessage(permAdd);
+                    sender.sendMessage(permDel);
+                } else {
+                    sender.sendMessage(show);
+                    sender.sendMessage("/cce list");
+                }
+                return true;
+            } else if (args[0].equalsIgnoreCase("reload")) {
+                reload(sender);
+                return true;
+            }  else if (args[0].equalsIgnoreCase("show")) {
+                if (args.length < 2) {
+                    sender.sendMessage(show);
+                    return true;
+                }
+                show(sender, args[1]);
+                return true;
+            } else if (args[0].equalsIgnoreCase("list")) {
+                String targetPlayerName = sender.getName();
+                boolean elevated = sender.hasPermission("customchatemoji.config");
+                if (args.length >= 2 && elevated) {
+                    targetPlayerName = args[1];
+                }
+                list(sender, targetPlayerName, elevated);
+                return true;
+            } else if (args[0].equalsIgnoreCase("perm")) {
+                if (!sender.hasPermission("customchatemoji.config")) return true;
+                if (args.length < 2) {
+                    sender.sendMessage(permList);
+                    sender.sendMessage(permAdd);
+                    sender.sendMessage(permDel);
+                    return true;
+                }
+
+                if (args[1].equalsIgnoreCase("list")) {
+                    listPerm(sender);
+                    return true;
+                } else if (args[1].equalsIgnoreCase("add")) {
+                    if (args.length < 4) {
+                        sender.sendMessage(permAdd);
+                        return true;
+                    }
+                    addPerm(sender, args[2], args[3]);
+                    return true;
+                } else if (args[1].equalsIgnoreCase("del")) {
+                    if (args.length < 4) {
+                        sender.sendMessage(permDel);
+                        return true;
+                    }
+                    delPerm(sender, args[2], args[3]);
+                    return true;
+                }
+
+                sender.sendMessage(permList);
+                sender.sendMessage(permAdd);
+                sender.sendMessage(permDel);
+                return true;
+            }
         }
 
-        BaseCommand cmd = BaseCommand.commands.get(args[0].toLowerCase());
-        cmd.runCommand(sender, Arrays.asList(Arrays.copyOfRange(args, 1, args.length)));
-        return true;
+        return false;
     }
 
-    public void sendHelp(CommandSender sender) {
-        for (BaseCommand cmd : BaseCommand.commands.values()) {
-            sender.sendMessage(ChatColor.YELLOW + "/cce " + cmd.getCommand().toLowerCase() + " - " + cmd.getDescription());
+    private void show(CommandSender sender, String emojiName) {
+        char emoji = EmojiUtil.fromEmojiName(emojiName);
+        if (emoji == '\0') {
+            String emojiTag = String.valueOf(ConfigManager.getEmojiTag());
+            sender.sendMessage(emojiTag + emojiName + emojiTag + " does not exist");
+        } else {
+            sender.sendMessage(String.valueOf(emoji));
+        }
+    }
+
+    private void reload(CommandSender sender) {
+        if (!sender.hasPermission("customchatemoji.config")) return;
+        Customchatemoji.getInstance().reloadConfig();
+        boolean success = ConfigManager.setup();
+        if (!success) {
+            sender.sendMessage("Failed to reload ConfigManager");
+        }
+    }
+
+    private void list(CommandSender sender, String targetPlayerName, boolean elevated) {
+        Player targetPlayer = Bukkit.getPlayer(targetPlayerName);
+        if (targetPlayer == null) {
+            sender.sendMessage("Player " + targetPlayerName + " not found");
+        } else {
+            String header;
+            if (elevated && !sender.getName().equals(targetPlayerName)) {
+                header = "Allowed emojis for " + targetPlayerName;
+            } else {
+                header = "Allowed emojis";
+            }
+            sender.sendMessage(header);
+            for (Map.Entry<Character, ConfigManager.EmojiEntry> emojiEntries : ConfigManager.getEmojiEntries().entrySet()) {
+                ConfigManager.EmojiEntry emojiEntry = emojiEntries.getValue();
+                String info = emojiEntries.getKey() + " " + ConfigManager.getEmojiTag() + emojiEntry.getName() + ConfigManager.getEmojiTag();
+                boolean hasPermission = false;
+
+                for (String permission : emojiEntry.getPermissions()) {
+                    if (targetPlayer.hasPermission(permission)) {
+                        hasPermission = true;
+                        break;
+                    }
+                }
+
+                if (hasPermission) {
+                    info = "\u2713 " + info;
+                } else {
+                    info = "\u2717 " + info;
+                }
+                sender.sendMessage(info);
+            }
+        }
+    }
+
+    private void listPerm(CommandSender sender) {
+        if (!sender.hasPermission("customchatemoji.config")) return;
+        sender.sendMessage("Permission list");
+        for (Map.Entry<Character, ConfigManager.EmojiEntry> emojiEntries : ConfigManager.getEmojiEntries().entrySet()) {
+            ConfigManager.EmojiEntry emojiEntry = emojiEntries.getValue();
+            sender.sendMessage(emojiEntries.getKey() + " " + emojiEntry.getName());
+
+            Set<String> permissions = emojiEntry.getPermissions();
+            if (permissions.isEmpty()) {
+                sender.sendMessage("- (No permissions set)");
+            } else {
+                for (String permission : permissions) {
+                    sender.sendMessage("- " + permission);
+                }
+            }
+        }
+    }
+
+    private void addPerm(CommandSender sender, String emojiName, String permission) {
+        if (!sender.hasPermission("customchatemoji.config")) return;
+
+        char emoji = EmojiUtil.fromEmojiName(emojiName);
+        if (emoji == '\0') {
+            sender.sendMessage(emojiName + " does not exist");
+            return;
+        }
+
+        ConfigManager.addPermission(emoji, permission);
+        sender.sendMessage("Permission " + permission + " added for " + emoji);
+    }
+
+
+    private void delPerm(CommandSender sender, String emojiName, String permission) {
+        if (!sender.hasPermission("customchatemoji.config")) return;
+
+        char emoji = EmojiUtil.fromEmojiName(emojiName);
+        if (emoji == '\0') {
+            sender.sendMessage("Emoji " + emojiName + " does not exist");
+            return;
+        }
+
+        boolean success = ConfigManager.delPermission(emoji, permission);
+        if (success) {
+            sender.sendMessage("Permission " + permission + " deleted for " + emoji);
+            if (ConfigManager.getEmojiEntries().get(emoji).getPermissions().isEmpty()) {
+                sender.sendMessage("Warning: " + emoji + " is now unused");
+            }
+        } else {
+            sender.sendMessage("Permission " + permission + " does not exist for " + emoji);
         }
     }
 }
