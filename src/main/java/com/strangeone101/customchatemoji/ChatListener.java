@@ -16,7 +16,7 @@ public class ChatListener implements Listener {
         Player player = event.getPlayer();
 
         ChatTokenizer.ParseResults parseResults = ChatTokenizer.parse(message, player);
-        if (!parseResults.hasEmoji) return;
+        if (!parseResults.needsTransform) return;
 
         message = ChatTokenizer.transform(message, parseResults.chatTokens);
         event.setMessage(message);

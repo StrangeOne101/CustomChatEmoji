@@ -12,7 +12,7 @@ public class ChatTokenizer {
 
     public static ParseResults parse(String message, Player player) {
         List<ChatToken> chatTokens = new ArrayList<>();
-        boolean hasEmoji = false;
+        boolean needsTransform = false;
 
         HashMap<Character, ConfigManager.EmojiEntry> emojiEntries = ConfigManager.getEmojiEntries();
         HashMap<String, Character> emojiNames = ConfigManager.getEmojiNames();
@@ -27,21 +27,23 @@ public class ChatTokenizer {
                 // Not in emoji tag mode
                 if (emojiEntries.containsKey(c)) {
                     //Emoji found directly as unicode (e.g. user pasted directly)
-                    if (stringBegin >= 0) {
-                        //End previous token
-                        if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Found direct unicode. Pushing previous [" + message.substring(stringBegin, index) + "]");
-                        chatTokens.add(new ChatToken(stringBegin, index));
-                        stringBegin = -1;
-                    }
-
                     if (EmojiUtil.isPermitted(c, player)) {
-                        //Add this as an emoji token
-                        if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Pushing 0x" + Integer.toHexString(c));
-                        chatTokens.add(new ChatToken(index, index + 1, c));
-                        hasEmoji = true;
+                        //Handle as if it was any other character
+                        if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Found allowed unicode 0x" + Integer.toHexString(c));
+                        if (stringBegin == -1) {
+                            //Start token
+                            stringBegin = index;
+                        }
                     } else {
+                        if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Found disallowed unicode 0x" + Integer.toHexString(c));
+                        if (stringBegin >= 0) {
+                            //End previous token
+                            if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Pushing previous [" + message.substring(stringBegin, index) + "]");
+                            chatTokens.add(new ChatToken(stringBegin, index));
+                            stringBegin = -1;
+                        }
+                        needsTransform = true;
                         //Escape emoji. This will be actually done in transform().
-                        if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Pushing escaped emoji 0x" + Integer.toHexString(c));
                         chatTokens.add(new ChatToken(ChatToken.ESCAPE_EMOJI, ChatToken.ESCAPE_EMOJI, c));
                     }
                 } else if (c == emojiTag) {
@@ -73,7 +75,7 @@ public class ChatTokenizer {
                     //Add this as an emoji token
                     if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Pushing 0x" + Integer.toHexString(c));
                     chatTokens.add(new ChatToken(index, index + 1, c));
-                    hasEmoji = true;
+                    needsTransform = true;
                     emojiTagBegin = -1;
                 } else if (c == emojiTag) {
                     //Closing emoji tag found
@@ -84,7 +86,7 @@ public class ChatTokenizer {
                         //End token as emoji
                         if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Pushing 0x" + Integer.toHexString(emoji) + " (from " + emojiName + ")");
                         chatTokens.add(new ChatToken(emojiTagBegin, index + 1, emoji));
-                        hasEmoji = true;
+                        needsTransform = true;
                         emojiTagBegin = -1;
                         if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode] => [String mode]");
                     } else {
@@ -109,7 +111,7 @@ public class ChatTokenizer {
             chatTokens.add(new ChatToken(emojiTagBegin, message.length()));
         }
 
-        return new ParseResults(chatTokens, hasEmoji);
+        return new ParseResults(chatTokens, needsTransform);
     }
 
     public static class ChatToken {
@@ -130,12 +132,12 @@ public class ChatTokenizer {
     }
 
     public static class ParseResults {
-        private ParseResults(List<ChatToken> chatTokens, boolean hasEmoji) {
+        private ParseResults(List<ChatToken> chatTokens, boolean needsTransform) {
             this.chatTokens = chatTokens;
-            this.hasEmoji = true;
+            this.needsTransform = needsTransform;
         }
         public final List<ChatToken> chatTokens;
-        public final boolean hasEmoji;
+        public final boolean needsTransform;
     }
 
     public static String transform(String message, List<ChatToken> chatTokens) {
