@@ -8,13 +8,11 @@ Emoji:
   "\ue002": omegapol
   "\ue003": ina_humu
 
-# Each permission defines allowed unicodes.
-Permission:
-  customchatemoji:
-    group:
-      default:
-        - "\ue000"
-        - "\ue001"
-        - "\ue002"
-      admin:
-        - "\ue003"
+# Each group defines allowed unicodes.
+Groups:
+  default:
+    - "\ue000"
+    - "\ue001"
+    - "\ue002"
+  admin:
+    - "\ue100:\ue105"

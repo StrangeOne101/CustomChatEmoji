@@ -4,7 +4,6 @@ import org.bukkit.permissions.Permissible;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class EmojiUtil {
@@ -12,7 +11,7 @@ public class EmojiUtil {
         ConfigManager.EmojiEntry emojiEntry = ConfigManager.getEmojiEntries().get(emoji);
         if (emojiEntry == null) return true;
 
-        for (String permission : emojiEntry.getPermissions()) {
+        for (String permission : emojiEntry.getGroups()) {
             if (permissible.hasPermission(permission)) {
                 return true;
             }
@@ -42,7 +41,7 @@ public class EmojiUtil {
         List<String> permissions = new ArrayList<>();
 
         for (ConfigManager.EmojiEntry entries : ConfigManager.getEmojiEntries().values()) {
-            for (String permission : entries.getPermissions()) {
+            for (String permission : entries.getGroups()) {
                 if (!permissions.contains(permission)) {
                     permissions.add(permission);
                 }
@@ -56,7 +55,7 @@ public class EmojiUtil {
         List<String> emojiNames = new ArrayList<>();
 
         for (ConfigManager.EmojiEntry entries : ConfigManager.getEmojiEntries().values()) {
-            for (String permission : entries.getPermissions()) {
+            for (String permission : entries.getGroups()) {
                 if (permissible.hasPermission(permission)) {
                     emojiNames.add(entries.getName());
                 }
