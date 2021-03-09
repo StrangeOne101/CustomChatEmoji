@@ -33,10 +33,17 @@ public class ChatTokenizer {
                         chatTokens.add(new ChatToken(stringBegin, index));
                         stringBegin = -1;
                     }
-                    //Add this as an emoji token
-                    if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Pushing 0x" + Integer.toHexString(c));
-                    chatTokens.add(new ChatToken(index, index + 1, c));
-                    hasEmoji = true;
+
+                    if (EmojiUtil.isPermitted(c, player)) {
+                        //Add this as an emoji token
+                        if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Pushing 0x" + Integer.toHexString(c));
+                        chatTokens.add(new ChatToken(index, index + 1, c));
+                        hasEmoji = true;
+                    } else {
+                        //Escape emoji. This will be actually done in transform().
+                        if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Pushing escaped emoji 0x" + Integer.toHexString(c));
+                        chatTokens.add(new ChatToken(ChatToken.ESCAPE_EMOJI, ChatToken.ESCAPE_EMOJI, c));
+                    }
                 } else if (c == emojiTag) {
                     //In emoji tag mode
                     if (stringBegin >= 0) {
@@ -118,6 +125,8 @@ public class ChatTokenizer {
         public int indexBegin;
         public int indexEnd;
         public char emoji;
+
+        public static final int ESCAPE_EMOJI = -1;
     }
 
     public static class ParseResults {
@@ -135,6 +144,11 @@ public class ChatTokenizer {
         for (ChatTokenizer.ChatToken token : chatTokens) {
             if (token.emoji == '\0') {
                 stringBuilder.append(message, token.indexBegin, token.indexEnd);
+            } else if (token.indexBegin == ChatToken.ESCAPE_EMOJI) {
+                char emojiTag = ConfigManager.getEmojiTag();
+                stringBuilder.append(emojiTag);
+                stringBuilder.append(EmojiUtil.toEmojiName(token.emoji));
+                stringBuilder.append(emojiTag);
             } else {
                 stringBuilder.append(token.emoji);
             }
