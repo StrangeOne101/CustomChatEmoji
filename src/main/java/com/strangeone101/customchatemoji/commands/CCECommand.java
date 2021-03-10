@@ -1,9 +1,11 @@
 package com.strangeone101.customchatemoji.commands;
 
+import com.strangeone101.customchatemoji.ChatTokenizer;
 import com.strangeone101.customchatemoji.ConfigManager;
 import com.strangeone101.customchatemoji.Customchatemoji;
 import com.strangeone101.customchatemoji.EmojiUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -61,9 +63,16 @@ public class CCECommand implements CommandExecutor, TabCompleter {
                     }
                 }
             } else if (args[0].equalsIgnoreCase("list")) {
-                if (sender.hasPermission("customchatemoji.config")) {
-                    return null; //Player name
+                List<String> groups = new ArrayList<>();
+                groups.add("all");
+                for (String group : ConfigManager.getGroupEntries().keySet()) {
+                    if (sender.hasPermission("customchatemoji.group." + group.toLowerCase())) {
+                        groups.add(group.toLowerCase());
+                    }
                 }
+
+                return groups;
+
             } else if (args[0].equalsIgnoreCase("perm") &&
                     sender.hasPermission("customchatemoji.config")) {
                 for (String param : this.permCommands) {
@@ -128,12 +137,23 @@ public class CCECommand implements CommandExecutor, TabCompleter {
                 show(sender, args[1]);
                 return true;
             } else if (args[0].equalsIgnoreCase("list")) {
-                String targetPlayerName = sender.getName();
-                boolean elevated = sender.hasPermission("customchatemoji.config");
-                if (args.length >= 2 && elevated) {
-                    targetPlayerName = args[1];
+                Set<ConfigManager.EmojiEntry> chars = new LinkedHashSet<>(); //Keep the emoji in the order they were inserted
+
+                if (args.length == 1 || args[1].equalsIgnoreCase("all")) {
+                    for (String group : ConfigManager.getGroupEntries().keySet()) {
+                        if (sender.hasPermission("customchatemoji.group." + group.toLowerCase())) {
+                            chars.addAll(ConfigManager.getGroupEntries().get(group.toLowerCase()));
+                        }
+                    }
+                } else {
+                    if (!ConfigManager.getGroupEntries().containsKey(args[1].toLowerCase())) {
+                        sender.sendMessage(ChatColor.RED + "Emoji group not found! Use /cce list all to see all emoji");
+                        return true;
+                    }
+                    chars.addAll(ConfigManager.getGroupEntries().get(args[1].toLowerCase()));
+
                 }
-                list(sender, targetPlayerName, elevated);
+                list(sender, chars);
                 return true;
             } else if (args[0].equalsIgnoreCase("perm")) {
                 if (!sender.hasPermission("customchatemoji.config")) return true;
@@ -192,6 +212,11 @@ public class CCECommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void list(CommandSender sender, Collection<ConfigManager.EmojiEntry> chars) {
+        //TODO
+    }
+
+    @Deprecated
     private void list(CommandSender sender, String targetPlayerName, boolean elevated) {
         Player targetPlayer = Bukkit.getPlayer(targetPlayerName);
         if (targetPlayer == null) {
@@ -209,7 +234,7 @@ public class CCECommand implements CommandExecutor, TabCompleter {
                 String info = emojiEntries.getKey() + " " + ConfigManager.getEmojiTag() + emojiEntry.getName() + ConfigManager.getEmojiTag();
                 boolean hasPermission = false;
 
-                for (String permission : emojiEntry.getPermissions()) {
+                for (String permission : emojiEntry.getGroups()) {
                     if (targetPlayer.hasPermission(permission)) {
                         hasPermission = true;
                         break;
@@ -233,7 +258,7 @@ public class CCECommand implements CommandExecutor, TabCompleter {
             ConfigManager.EmojiEntry emojiEntry = emojiEntries.getValue();
             sender.sendMessage(emojiEntries.getKey() + " " + emojiEntry.getName());
 
-            Set<String> permissions = emojiEntry.getPermissions();
+            Set<String> permissions = emojiEntry.getGroups();
             if (permissions.isEmpty()) {
                 sender.sendMessage("- (No permissions set)");
             } else {
@@ -270,7 +295,7 @@ public class CCECommand implements CommandExecutor, TabCompleter {
         boolean success = ConfigManager.delPermission(emoji, permission);
         if (success) {
             sender.sendMessage("Permission " + permission + " deleted for " + emoji);
-            if (ConfigManager.getEmojiEntries().get(emoji).getPermissions().isEmpty()) {
+            if (ConfigManager.getEmojiEntries().get(emoji).getGroups().isEmpty()) {
                 sender.sendMessage("Warning: " + emoji + " is now unused");
             }
         } else {

@@ -11,6 +11,7 @@ public class ConfigManager {
     private static char emojiTag;
     private static HashMap<String, Character> emojiNames;
     private static HashMap<Character, EmojiEntry> emojiEntries;
+    private static HashMap<String, Set<EmojiEntry>> groupEntries;
 
     private static final boolean LOG_DEBUG = true;
 
@@ -27,6 +28,7 @@ public class ConfigManager {
 
         emojiNames = new HashMap<>();
         emojiEntries = new HashMap<>();
+        groupEntries = new HashMap<>();
 
         ConfigurationSection emojiSection = config.getConfigurationSection("Emoji");
         if (LOG_DEBUG) Bukkit.getLogger().info("Emoji = [" + (emojiSection != null ? emojiSection.getName() : "null") + "]");
@@ -42,45 +44,87 @@ public class ConfigManager {
             emojiEntries.put(emojiUnicode, new EmojiEntry(emojiName));
         }
 
-        ConfigurationSection permissionSection = config.getConfigurationSection("Permission");
-        if (LOG_DEBUG) Bukkit.getLogger().info("Permission = [" + (permissionSection != null ? permissionSection.getName() : "null") + "]");
-        if (permissionSection == null) return false;
+        ConfigurationSection groupSection = config.getConfigurationSection("Groups");
+        if (LOG_DEBUG) Bukkit.getLogger().info("Group = [" + (groupSection != null ? groupSection.getName() : "null") + "]");
+        if (groupSection == null) return false;
 
-        for (String permission : permissionSection.getKeys(true)) {
-            if (LOG_DEBUG) Bukkit.getLogger().info("permission = [" + permission + "]");
-            if (!permissionSection.isList(permission)) continue;
-            for (String emoji : permissionSection.getStringList(permission)) {
-                if (LOG_DEBUG) Bukkit.getLogger().info(permission + " = [" + emoji + "]");
-
-                if (emoji.length() != 1) {
-                    Bukkit.getLogger().warning("Invalid unicode: " + emoji);
-                    continue;
+        for (String group : groupSection.getKeys(false)) {
+            if (LOG_DEBUG) Bukkit.getLogger().info("group = [" + group + "]");
+            if (groupSection.isList(group)) {
+                for (String emoji : groupSection.getStringList(group)) {
+                    addEmojiGroup(emoji, group);
                 }
-
-                char unicode = emoji.charAt(0);
-                EmojiEntry entry = emojiEntries.get(unicode);
-                if (entry != null) {
-                    Bukkit.getLogger().info(Integer.toHexString(unicode) + " added for " + permission);
-                    entry.getPermissions().add(permission);
-                }
+            } else {
+                addEmojiGroup(groupSection.getString(group), group);
             }
+
+
         }
         return true;
     }
 
+    private static void addEmojiGroup(String emoji, String group) {
+        if (LOG_DEBUG) Bukkit.getLogger().info(group + " = [" + emoji + "]");
+
+        if (emoji.length() != 1) {
+            Bukkit.getLogger().warning("Invalid unicode: " + emoji);
+            return;
+        }
+
+        Set<Character> chars = new HashSet<>();
+
+        if (emoji.contains(":")) {
+            String split1 = emoji.split(":", 2)[0].trim();
+            String split2 = emoji.split(":", 2)[0].trim();
+
+            char a = split1.charAt(0);
+            char b = split2.charAt(0);
+
+            if (a > b) {
+                char temp = a;
+                a = b;
+                b = temp;
+            }
+
+            for (char c = a; a <= b; a++) {
+                chars.add(c);
+            }
+        } else {
+            chars.add(emoji.charAt(0));
+        }
+
+        for (Character charr : chars) {
+            char unicode = charr.charValue();
+            EmojiEntry entry = emojiEntries.get(unicode);
+            if (entry != null) {
+                Bukkit.getLogger().info(Integer.toHexString(unicode) + " added for " + group);
+                entry.getGroups().add(group.toLowerCase());
+
+                if (!groupEntries.containsKey(group.toLowerCase())) {
+                    groupEntries.put(group.toLowerCase(), new HashSet<>());
+                }
+
+                groupEntries.get(group.toLowerCase()).add(entry);
+            }
+        }
+
+
+    }
+
     public static class EmojiEntry {
-        public EmojiEntry(String name, Set<String> permissions) {
+        public EmojiEntry(String name, Set<String> groups) {
             this.name = name;
-            this.permissions = permissions;
+            this.groups = groups;
         }
         public EmojiEntry(String name) {
             this(name, new HashSet<>());
         }
         public String getName() { return this.name; }
-        public Set<String> getPermissions() { return this.permissions; }
+
+        public Set<String> getGroups() { return this.groups; }
 
         private final String name;
-        private final Set<String> permissions;
+        private final Set<String> groups;
     }
 
     public static char getEmojiTag() {
@@ -94,9 +138,14 @@ public class ConfigManager {
         return emojiEntries;
     }
 
+    public static HashMap<String, Set<EmojiEntry>> getGroupEntries() {
+        return groupEntries;
+    }
+
+    @Deprecated
     public static void addPermission(char emoji, String permission) {
         //Memory
-        ConfigManager.getEmojiEntries().get(emoji).getPermissions().add(permission);
+        ConfigManager.getEmojiEntries().get(emoji).getGroups().add(permission);
 
         //File
         String key = "Permission." + permission;
@@ -109,10 +158,11 @@ public class ConfigManager {
         }
     }
 
+    @Deprecated
     public static boolean delPermission(char emoji, String permission) {
         boolean success;
         //Memory
-        success = ConfigManager.getEmojiEntries().get(emoji).getPermissions().remove(permission);
+        success = ConfigManager.getEmojiEntries().get(emoji).getGroups().remove(permission);
 
         //File
         if (success) {
