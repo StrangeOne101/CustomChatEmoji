@@ -3,10 +3,22 @@ package com.strangeone101.customchatemoji;
 import org.bukkit.permissions.Permissible;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class EmojiUtil {
+    public static char fromHexString (String hexString) {
+        char emoji = '\0';
+        try {
+            int emojiInt = Integer.parseUnsignedInt(hexString, 16);
+            if (emojiInt < Character.MAX_VALUE) {
+                emoji = (char)emojiInt;
+            }
+        } catch (NumberFormatException ignored) { }
+        return emoji;
+    }
+
     public static boolean isPermitted (char emoji, Permissible permissible) {
         ConfigManager.EmojiEntry emojiEntry = ConfigManager.getEmojiEntries().get(emoji);
         if (emojiEntry == null) return true;

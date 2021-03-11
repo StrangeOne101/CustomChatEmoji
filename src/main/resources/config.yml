@@ -3,16 +3,16 @@ EmojiTag: ":"
 
 # Defines translation of emojis to unicodes
 Emoji:
-  "\ue000": matsuri_pog
-  "\ue001": ayame_despair
-  "\ue002": omegapol
-  "\ue003": ina_humu
+  e000: matsuri_pog
+  e001: ayame_despair
+  e002: omegapol
+  e003: ina_humu
 
 # Each group defines allowed unicodes.
 Groups:
   default:
-    - "\ue000"
-    - "\ue001"
-    - "\ue002"
+    - e000
+    - e001
+    - e002
   admin:
-    - "\ue100:\ue105"
+    - e100:e105
