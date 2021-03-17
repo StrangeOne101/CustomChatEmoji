@@ -11,7 +11,7 @@ public class ConfigManager {
     private static char emojiTag;
     private static HashMap<String, Character> emojiNames;
     private static HashMap<Character, EmojiEntry> emojiEntries;
-    private static HashMap<String, Set<EmojiEntry>> groupEntries;
+    private static HashMap<String, LinkedHashSet<EmojiEntry>> groupEntries;
 
     private static final boolean LOG_DEBUG = true;
 
@@ -104,7 +104,7 @@ public class ConfigManager {
             entry.getGroups().add(group);
 
             if (!groupEntries.containsKey(group)) {
-                groupEntries.put(group, new HashSet<>());
+                groupEntries.put(group, new LinkedHashSet<>());
             }
 
             groupEntries.get(group).add(entry);
@@ -138,47 +138,7 @@ public class ConfigManager {
         return emojiEntries;
     }
 
-    public static HashMap<String, Set<EmojiEntry>> getGroupEntries() {
+    public static HashMap<String, LinkedHashSet<EmojiEntry>> getGroupEntries() {
         return groupEntries;
-    }
-
-    @Deprecated
-    public static void addPermission(char emoji, String permission) {
-        //Memory
-        ConfigManager.getEmojiEntries().get(emoji).getGroups().add(permission);
-
-        //File
-        String key = "Permission." + permission;
-
-        List<String> emojis = config.getStringList(key);
-        if (!emojis.contains(emoji)) {
-            emojis.add(String.valueOf(emoji));
-            config.set(key, emojis);
-            Customchatemoji.getInstance().saveConfig();
-        }
-    }
-
-    @Deprecated
-    public static boolean delPermission(char emoji, String permission) {
-        boolean success;
-        //Memory
-        success = ConfigManager.getEmojiEntries().get(emoji).getGroups().remove(permission);
-
-        //File
-        if (success) {
-            String key = "Permission." + permission;
-
-            List<String> emojis = config.getStringList(key);
-
-            emojis.remove(String.valueOf(emoji));
-            if (emojis.isEmpty()) {
-                config.set(key, null);
-            } else {
-                config.set(key, emojis);
-            }
-            Customchatemoji.getInstance().saveConfig();
-        }
-
-        return success;
     }
 }
