@@ -1,7 +1,7 @@
 package com.strangeone101.customchatemoji;
 
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import org.bukkit.permissions.Permissible;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,7 +10,7 @@ import java.util.List;
 public class ChatTokenizer {
     private static final boolean LOG_DEBUG = true;
 
-    public static ParseResults parse(String message, Player player) {
+    public static ParseResults parse(String message, Permissible permissible) {
         List<ChatToken> chatTokens = new ArrayList<>();
         boolean needsTransform = false;
 
@@ -27,7 +27,7 @@ public class ChatTokenizer {
                 // Not in emoji tag mode
                 if (emojiEntries.containsKey(c)) {
                     //Emoji found directly as unicode (e.g. user pasted directly)
-                    if (EmojiUtil.isPermitted(c, player)) {
+                    if (EmojiUtil.isPermitted(c, permissible)) {
                         //Handle as if it was any other character
                         if (LOG_DEBUG) Bukkit.getLogger().info("[String mode]Found allowed unicode 0x" + Integer.toHexString(c));
                         if (stringBegin == -1) {
@@ -82,7 +82,7 @@ public class ChatTokenizer {
                     String emojiName = message.substring(emojiTagBegin + 1, index);
                     if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode] Checking [" + emojiName + "]");
                     Character emoji = emojiNames.get(emojiName);
-                    if (emoji != null && EmojiUtil.isPermitted(emoji, player)) {
+                    if (emoji != null && EmojiUtil.isPermitted(emoji, permissible)) {
                         //End token as emoji
                         if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Pushing 0x" + Integer.toHexString(emoji) + " (from " + emojiName + ")");
                         chatTokens.add(new ChatToken(emojiTagBegin, index + 1, emoji));
@@ -143,6 +143,12 @@ public class ChatTokenizer {
     public static String transform(String message, List<ChatToken> chatTokens) {
         StringBuilder stringBuilder = new StringBuilder();
 
+        transform(message, chatTokens, stringBuilder);
+
+        return stringBuilder.toString();
+    }
+
+    public static void transform(String message, List<ChatToken> chatTokens, StringBuilder stringBuilder) {
         for (ChatTokenizer.ChatToken token : chatTokens) {
             if (token.emoji == '\0') {
                 stringBuilder.append(message, token.indexBegin, token.indexEnd);
@@ -155,7 +161,5 @@ public class ChatTokenizer {
                 stringBuilder.append(token.emoji);
             }
         }
-
-        return stringBuilder.toString();
     }
 }
