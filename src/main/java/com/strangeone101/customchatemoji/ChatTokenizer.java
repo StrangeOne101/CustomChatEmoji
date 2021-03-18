@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class ChatTokenizer {
-    private static final boolean LOG_DEBUG = true;
+    private static final boolean LOG_DEBUG = false;
 
     public static ParseResults parse(String message, Permissible permissible) {
         List<ChatToken> chatTokens = new ArrayList<>();

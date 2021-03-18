@@ -1,8 +1,10 @@
 package com.strangeone101.customchatemoji;
 
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
+import org.bukkit.ChatColor;
 import org.bukkit.permissions.Permissible;
 
 import java.util.ArrayList;
@@ -25,8 +27,8 @@ public class EmojiUtil {
         ConfigManager.EmojiEntry emojiEntry = ConfigManager.getEmojiEntries().get(emoji);
         if (emojiEntry == null) return true;
 
-        for (String permission : emojiEntry.getGroups()) {
-            if (permissible.hasPermission(permission)) {
+        for (String group : emojiEntry.getGroups()) {
+            if (permissible.hasPermission("customchatemoji.group." + group)) {
                 return true;
             }
         }
@@ -55,9 +57,9 @@ public class EmojiUtil {
         List<String> permissions = new ArrayList<>();
 
         for (ConfigManager.EmojiEntry entries : ConfigManager.getEmojiEntries().values()) {
-            for (String permission : entries.getGroups()) {
-                if (!permissions.contains(permission)) {
-                    permissions.add(permission);
+            for (String group : entries.getGroups()) {
+                if (!permissions.contains("customchatemoji.group." + group)) {
+                    permissions.add(group);
                 }
             }
         }
@@ -69,8 +71,8 @@ public class EmojiUtil {
         List<String> emojiNames = new ArrayList<>();
 
         for (ConfigManager.EmojiEntry entries : ConfigManager.getEmojiEntries().values()) {
-            for (String permission : entries.getGroups()) {
-                if (permissible.hasPermission(permission)) {
+            for (String group : entries.getGroups()) {
+                if (permissible.hasPermission("customchatemoji.group." + group)) {
                     emojiNames.add(entries.getName());
                 }
             }
@@ -84,8 +86,8 @@ public class EmojiUtil {
         char emojiTag = ConfigManager.getEmojiTag();
 
         for (ConfigManager.EmojiEntry entries : ConfigManager.getEmojiEntries().values()) {
-            for (String permission : entries.getGroups()) {
-                if (permissible.hasPermission(permission)) {
+            for (String group : entries.getGroups()) {
+                if (permissible.hasPermission("customchatemoji.group." + group)) {
                     emojiNames.add("" + emojiTag + entries.getName() + emojiTag);
                 }
             }
@@ -106,8 +108,8 @@ public class EmojiUtil {
         char emojiTag = ConfigManager.getEmojiTag();
 
         TextComponent message = new TextComponent(String.valueOf(emoji));
-        message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("" + emojiTag + emojiName + emojiTag)));
-
+        message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("" + emojiTag + emojiName + emojiTag + "\n\n" + ChatColor.RED + "Click to try!")));
+        message.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/cce chat " + emojiTag + emojiName + emojiTag));
         return message;
     }
 }
