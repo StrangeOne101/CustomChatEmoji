@@ -3,6 +3,10 @@ package com.strangeone101.customchatemoji.commands;
 import com.strangeone101.customchatemoji.ConfigManager;
 import com.strangeone101.customchatemoji.Customchatemoji;
 import com.strangeone101.customchatemoji.EmojiUtil;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -120,7 +124,7 @@ public class CCECommand implements CommandExecutor, TabCompleter {
             String emojiTag = String.valueOf(ConfigManager.getEmojiTag());
             sender.sendMessage(emojiTag + emojiName + emojiTag + " does not exist");
         } else {
-            sender.sendMessage(String.valueOf(emoji));
+            sender.spigot().sendMessage(EmojiUtil.toTextComponent(emojiName, emoji));
         }
     }
 
@@ -148,15 +152,17 @@ public class CCECommand implements CommandExecutor, TabCompleter {
     private void list(CommandSender sender, String group) {
         LinkedHashSet<ConfigManager.EmojiEntry> emojiEntries = ConfigManager.getGroupEntries().get(group);
         if (emojiEntries != null) {
-            sender.sendMessage(group + " emojis:");
-            StringBuilder stringBuilder = new StringBuilder();
+            BaseComponent[] messages = new BaseComponent[1 + emojiEntries.size()];
+
+            int cursor = 0;
+            messages[cursor++] = new TextComponent(group + " emojis:\n");
 
             for (ConfigManager.EmojiEntry emojiEntry : emojiEntries) {
-                char unicode = ConfigManager.getEmojiNames().get(emojiEntry.getName());
-                stringBuilder.append(unicode);
+                String emojiName = emojiEntry.getName();
+                messages[cursor++] = EmojiUtil.toTextComponent(emojiName);
             }
 
-            sender.sendMessage(stringBuilder.toString());
+            sender.spigot().sendMessage(messages);
         }
     }
 }
