@@ -79,6 +79,21 @@ public class EmojiUtil {
         return emojiNames;
     }
 
+    public static List<String> allPermittedEmojiFullNames (Permissible permissible) {
+        List<String> emojiNames = new ArrayList<>();
+        char emojiTag = ConfigManager.getEmojiTag();
+
+        for (ConfigManager.EmojiEntry entries : ConfigManager.getEmojiEntries().values()) {
+            for (String permission : entries.getGroups()) {
+                if (permissible.hasPermission(permission)) {
+                    emojiNames.add("" + emojiTag + entries.getName() + emojiTag);
+                }
+            }
+        }
+
+        return emojiNames;
+    }
+
     public static TextComponent toTextComponent(String emojiName) {
         return toTextComponent(emojiName, EmojiUtil.fromEmojiName(emojiName));
     }

@@ -1,18 +1,18 @@
 package com.strangeone101.customchatemoji.commands;
 
+import com.strangeone101.customchatemoji.ChatTokenizer;
 import com.strangeone101.customchatemoji.ConfigManager;
 import com.strangeone101.customchatemoji.Customchatemoji;
 import com.strangeone101.customchatemoji.EmojiUtil;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
 import java.util.*;
 
@@ -24,6 +24,7 @@ public class CCECommand implements CommandExecutor, TabCompleter {
         this.rootCommands.add(new CommandPermission("show"));
         this.rootCommands.add(new CommandPermission("list"));
         this.rootCommands.add(new CommandPermission("reload", "customchatemoji.config"));
+        this.rootCommands.add(new CommandPermission("chat"));
     }
 
     private static class CommandPermission {
@@ -60,16 +61,21 @@ public class CCECommand implements CommandExecutor, TabCompleter {
                     }
                 }
             } else if (args[0].equalsIgnoreCase("list")) {
-                List<String> groups = new ArrayList<>();
-                groups.add("all");
+                results.add("all");
                 for (String group : ConfigManager.getGroupEntries().keySet()) {
                     if (sender.hasPermission("customchatemoji.group." + group.toLowerCase())) {
-                        groups.add(group.toLowerCase());
+                        results.add(group.toLowerCase());
                     }
                 }
+            }
+        }
 
-                return groups;
-
+        // /cce chat autocomplete on any argument
+        if (args.length >= 2 && args[0].equalsIgnoreCase("chat")) {
+            for (String param : EmojiUtil.allPermittedEmojiFullNames(sender)) {
+                if (param.toLowerCase().startsWith(args[args.length - 1].toLowerCase())) {
+                    results.add(param);
+                }
             }
         }
         return results;
@@ -77,25 +83,26 @@ public class CCECommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        String show = "/cce show <emoji>";
+        String reloadHelp = "/cce reload";
+        String chatHelp = "/cce chat {messages}";
+        String listHelp = "/cce list [group]|all";
+        String showHelp = "/cce show <emoji>";
 
         if (args.length > 0) {
             if (args[0].equalsIgnoreCase("help")) {
                 if (sender.hasPermission("customchatemoji.config")) {
-                    sender.sendMessage("/cce reload");
-                    sender.sendMessage(show);
-                    sender.sendMessage("/cce list [group]|all");
-                } else {
-                    sender.sendMessage(show);
-                    sender.sendMessage("/cce list [group]|all");
+                    sender.sendMessage(reloadHelp);
                 }
+                sender.sendMessage(chatHelp);
+                sender.sendMessage(listHelp);
+                sender.sendMessage(showHelp);
                 return true;
             } else if (args[0].equalsIgnoreCase("reload")) {
                 reload(sender);
                 return true;
             }  else if (args[0].equalsIgnoreCase("show")) {
                 if (args.length < 2) {
-                    sender.sendMessage(show);
+                    sender.sendMessage(showHelp);
                     return true;
                 }
                 show(sender, args[1]);
@@ -111,6 +118,18 @@ public class CCECommand implements CommandExecutor, TabCompleter {
                     }
                     list(sender, group);
                 }
+                return true;
+            } else if (args[0].equalsIgnoreCase("chat")) {
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage("Command must be used in-game");
+                    return true;
+                }
+
+                if (args.length == 1) {
+                    sender.sendMessage(chatHelp);
+                    return true;
+                }
+                chat((Player)sender, args);
                 return true;
             }
         }
@@ -164,5 +183,26 @@ public class CCECommand implements CommandExecutor, TabCompleter {
 
             sender.spigot().sendMessage(messages);
         }
+    }
+
+    private void chat(Player sender, String[] args) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (int index = 1; index < args.length; index++) { //skip first argument, which is 'chat'
+            String arg = args[index];
+
+            ChatTokenizer.ParseResults parseResults = ChatTokenizer.parse(arg, sender);
+            if (parseResults.needsTransform) {
+                ChatTokenizer.transform(arg, parseResults.chatTokens, stringBuilder);
+            } else {
+                stringBuilder.append(arg);
+            }
+
+            if (index < args.length - 1) {
+                stringBuilder.append(' ');
+            }
+        }
+
+        sender.chat(stringBuilder.toString());
     }
 }
