@@ -54,7 +54,7 @@ public class ConfigManager {
                 Bukkit.getLogger().warning("Emoji [" + emojiHexString + "] is invalid");
                 continue;
             }
-            String emojiName = emojiMapping.getValue().toString();
+            String emojiName = emojiMapping.getValue().toString().toLowerCase();
             if (LOG_DEBUG) Bukkit.getLogger().info(Integer.toHexString(emojiUnicode) + " = [" + emojiName + "]");
 
             emojiNames.put(emojiName, emojiUnicode);

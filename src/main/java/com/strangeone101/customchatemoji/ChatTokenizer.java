@@ -81,7 +81,7 @@ public class ChatTokenizer {
                     //Closing emoji tag found
                     String emojiName = message.substring(emojiTagBegin + 1, index);
                     if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode] Checking [" + emojiName + "]");
-                    Character emoji = emojiNames.get(emojiName);
+                    Character emoji = emojiNames.get(emojiName.toLowerCase());
                     if (emoji != null && EmojiUtil.isPermitted(emoji, permissible)) {
                         //End token as emoji
                         if (LOG_DEBUG) Bukkit.getLogger().info("[Emoji mode]Pushing 0x" + Integer.toHexString(emoji) + " (from " + emojiName + ")");
