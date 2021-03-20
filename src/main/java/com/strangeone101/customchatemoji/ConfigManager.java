@@ -13,7 +13,13 @@ public class ConfigManager {
     private static HashMap<Character, EmojiEntry> emojiEntries;
     private static HashMap<String, LinkedHashSet<EmojiEntry>> groupEntries;
 
-    private static final boolean LOG_DEBUG = true;
+    private static boolean resourcePack = false;
+    private static String resourcePackURL;
+    private static boolean resourcePackDirect;
+
+    private static String version;
+
+    private static final boolean LOG_DEBUG = false;
 
     public static boolean setup() {
         Customchatemoji.getInstance().saveDefaultConfig();
@@ -25,6 +31,12 @@ public class ConfigManager {
             emojiTag = emojiTagString.charAt(0);
             Bukkit.getLogger().info("emojiTag = [" + emojiTag + "]");
         }
+
+        resourcePack = config.getBoolean("ResourcePack.Enabled", false);
+        resourcePackURL = config.getString("ResourcePack.URL", "");
+        resourcePackDirect = config.getString("ResourcePack.Method", "direct").equalsIgnoreCase("direct");
+
+        version = config.getString("Version", "??");
 
         emojiNames = new HashMap<>();
         emojiEntries = new HashMap<>();
@@ -43,7 +55,7 @@ public class ConfigManager {
                 continue;
             }
             String emojiName = emojiMapping.getValue().toString();
-            Bukkit.getLogger().info(Integer.toHexString(emojiUnicode) + " = [" + emojiName + "]");
+            if (LOG_DEBUG) Bukkit.getLogger().info(Integer.toHexString(emojiUnicode) + " = [" + emojiName + "]");
 
             emojiNames.put(emojiName, emojiUnicode);
             emojiEntries.put(emojiUnicode, new EmojiEntry(emojiName));
@@ -100,7 +112,7 @@ public class ConfigManager {
         if (entry == null) {
             Bukkit.getLogger().warning("Emoji 0x" + Integer.toHexString(emoji) + " does not exist. Ignored.");
         } else {
-            Bukkit.getLogger().info(Integer.toHexString(emoji) + " added for " + group);
+            if (LOG_DEBUG) Bukkit.getLogger().info(Integer.toHexString(emoji) + " added for " + group);
             entry.getGroups().add(group);
 
             if (!groupEntries.containsKey(group)) {
@@ -109,6 +121,22 @@ public class ConfigManager {
 
             groupEntries.get(group).add(entry);
         }
+    }
+
+    public static boolean isResourcePackEnabled() {
+        return resourcePack;
+    }
+
+    public static String getResourcePackURL() {
+        return resourcePackURL;
+    }
+
+    public static boolean isResourcePackDirect() {
+        return resourcePackDirect;
+    }
+
+    public static String getVersion() {
+        return version;
     }
 
     public static class EmojiEntry {

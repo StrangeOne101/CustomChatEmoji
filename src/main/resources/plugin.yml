@@ -1,4 +1,4 @@
-name: Customchatemoji
+name: CustomChatEmoji
 version: ${project.version}
 main: com.strangeone101.customchatemoji.Customchatemoji
 api-version: 1.16
@@ -8,5 +8,24 @@ commands:
   cce:
     description: Lists/edits custom chat emojis
     usage: Use /cce help
-    permission: customchatemoji.cmd
+    permission: customchatemoji.command
     permission-message: You are not allowed to do that.
+permissions:
+  customchatemoji.group.*:
+    default: op
+    description: Have access to all emoji groups
+  customchatemoji.group.default:
+    default: true
+    description: Have access to the default emoji
+  customchatemoji.group.admin:
+    default: op
+    description: Have access to the staff emoji
+  customchatemoji.command.version:
+    default: true
+    description: Show what version you and the server are on
+  customchatemoji.command.reload:
+    default: op
+    description: Reload the config
+  customchatemoji.command:
+    default: true
+    description: Use commands

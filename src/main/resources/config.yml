@@ -1,6 +1,18 @@
 # The character that should surround emoji names. E.g. the emoji :smile: uses the character :
 EmojiTag: ":"
 
+# The version used in /cce version. Make sure the resource pack has the same as this
+Version: "0.2"
+
+# The resource pack to send to clients
+ResourcePack:
+  Enabled: false
+  URL: ""
+  # The method can be either 'direct' or 'link'. Direct will automatically download it for the client
+  # while link will open a link to the pack in the browser
+  Method: direct
+
+
 # Defines translation of emojis to unicodes
 Emoji:
   e000: matsuri_pog
@@ -10,9 +22,9 @@ Emoji:
 
 # Each group defines allowed unicodes.
 Groups:
-  default:
+  Default:
     - e000
     - e001
     - e002
-  admin:
+  Admin:
     - e100:e105
