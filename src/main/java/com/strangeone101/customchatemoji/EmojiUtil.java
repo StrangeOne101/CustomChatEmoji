@@ -44,7 +44,7 @@ public class EmojiUtil {
 
     public static char fromEmojiName (String emojiName) {
         if (emojiName == null) return '\0';
-        Character emoji = ConfigManager.getEmojiNames().get(emojiName);
+        Character emoji = ConfigManager.getEmojiNames().get(emojiName.toLowerCase());
         if (emoji == null) return '\0';
         return emoji;
     }
@@ -106,6 +106,7 @@ public class EmojiUtil {
 
     public static TextComponent toTextComponent(String emojiName, char emoji) {
         char emojiTag = ConfigManager.getEmojiTag();
+        emojiName = emojiName.toLowerCase();
 
         TextComponent message = new TextComponent(String.valueOf(emoji));
         message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("" + emojiTag + emojiName + emojiTag + "\n\n" + ChatColor.RED + "Click to try!")));

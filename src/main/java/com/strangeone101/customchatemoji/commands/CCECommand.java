@@ -110,7 +110,7 @@ public class CCECommand implements CommandExecutor, TabCompleter {
                     sender.sendMessage(showHelp);
                     return true;
                 }
-                show(sender, args[1]);
+                show(sender, args[1].toLowerCase());
                 return true;
             } else if (args[0].equalsIgnoreCase("list")) {
                 if (args.length == 1 || args[1].equalsIgnoreCase("all")) {
